@@ -1,0 +1,141 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: API Gateway
+
+paths:
+  /health:
+    get:
+      summary: Health Check
+      description: Endpoint to confirm the API Gateway service is operational.
+      operationId: healthCheck
+      x-yc-apigateway-integration:
+        type: dummy
+        http_code: 200
+        http_headers:
+          "Content-Type": "application/json"
+        content:
+          "*": '{"status": "ok"}'
+      responses:
+        "200":
+          description: Service is healthy.
+
+  /config:
+    get:
+      summary: Config
+      description: Implementation of frontend dynamic configuration.
+      operationId: config
+      x-yc-apigateway-integration:
+        type: dummy
+        http_code: 200
+        http_headers:
+          "Content-Type": "application/json"
+        content:
+          "*": '{"backend_url": "https://backend.interview.yandex.itqdev.xyz"}'
+      responses:
+        "200":
+          description: Config returned.
+
+  /assets/{path+}:
+    get:
+      summary: Get Static File
+      description: Serves static files from the S3 bucket.
+      operationId: getAssetsFile
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      x-yc-apigateway-integration:
+        type: object_storage
+        bucket: "${bucket_name}"
+        object: "current/assets/{path}"
+        error_object: "old/assets/{path}"
+      responses:
+        "200":
+          description: Static file content.
+        "404":
+          description: Asset not found.
+
+  /img/{path+}:
+    get:
+      summary: Get Static File
+      description: Serves static files from the S3 bucket.
+      operationId: getImgFile
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      x-yc-apigateway-integration:
+        type: object_storage
+        bucket: "${bucket_name}"
+        object: "current/img/{path}"
+        error_object: "old/img/{path}"
+      responses:
+        "200":
+          description: Static file content.
+        "404":
+          description: Asset not found.
+
+  /favicon.svg:
+    get:
+      summary: Get Static File
+      description: Serves static files from the S3 bucket.
+      operationId: getFaviconFile
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      x-yc-apigateway-integration:
+        type: object_storage
+        bucket: "${bucket_name}"
+        object: "current/favicon.svg"
+        error_object: "old/favicon.svg"
+      responses:
+        "200":
+          description: Static file content.
+        "404":
+          description: Asset not found.
+
+  /:
+    get:
+      summary: Serve SPA Entrypoint (Root)
+      description: Serves the main 'index.html' file for requests to the root of the domain.
+      operationId: getSpaIndexRoot
+      x-yc-apigateway-integration:
+        type: object_storage
+        bucket: "${bucket_name}"
+        object: "current/index.html"
+        error_object: "old/index.html"
+      responses:
+        "200":
+          description: Main HTML page of the SPA.
+        "404":
+          description: "'index.html' not found in the bucket."
+
+  /{proxy+}:
+    get:
+      summary: Serve SPA Entrypoint (Client-Side Routes)
+      description: Catches all other application paths and serves 'index.html', enabling client-side routing.
+      operationId: getSpaIndexCatchAll
+      parameters:
+        - name: proxy
+          in: path
+          required: true
+          schema:
+            type: string
+      x-yc-apigateway-integration:
+        type: object_storage
+        bucket: "${bucket_name}"
+        object: "current/index.html"
+        error_object: "old/index.html"
+      responses:
+        "200":
+          description: Main HTML page of the SPA.
+        "404":
+          description: "'index.html' not found in the bucket."

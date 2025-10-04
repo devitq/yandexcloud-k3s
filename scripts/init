@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ -f ./.env ]; then
+  export $(grep -v '^#' ./.env | xargs)
+else
+  echo ".env file not found!"
+  exit 1
+fi
+
+terraform init \
+  -backend-config="endpoint=${AWS_ENDPOINT}" \
+  -backend-config="bucket=${AWS_BUCKET}" \
+  -backend-config="key=${AWS_BUCKET_KEY}" \
+  -backend-config="use_path_style=${AWS_USE_PATH_STYLE}" \
+  -migrate-state

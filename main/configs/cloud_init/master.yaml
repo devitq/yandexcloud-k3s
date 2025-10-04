@@ -1,0 +1,57 @@
+#cloud-config
+
+ssh_pwauth: false
+package_update: true
+package_upgrade: true
+
+growpart:
+  mode: growpart
+  devices: ["/"]
+  ignore_growroot_disabled: true
+
+users:
+  - name: ubuntu
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+    shell: /bin/bash
+
+write_files:
+  - path: /var/lib/rancher/credentialprovider/config.yaml
+    permissions: "0600"
+    encoding: b64
+    content: ${k3s_credential_provider_config}
+  - path: /var/lib/rancher/credentialprovider/bin/yc-credential-provider
+    permissions: "0700"
+    encoding: b64
+    content: ${k3s_credential_provider}
+
+runcmd:
+  - |
+    export HOME=/root
+    curl https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash -s -- -i /tmp/yc -n
+    mv /tmp/yc/bin/yc /usr/bin/
+    yc config set instance-service-account true
+    yc config set cloud-id ${yc_cloud_id}
+  - |
+    DISK=/dev/disk/by-id/virtio-data
+    K3S_DIR=${k3s_dir}
+    mkdir -p $K3S_DIR
+    if ! blkid $DISK > /dev/null; then
+        mkfs.ext4 $DISK
+    fi
+    echo "$DISK $K3S_DIR ext4 defaults 0 0" >> /etc/fstab
+    mount -a
+  - |
+    curl -sfL https://get.k3s.io | INSTALL_K3S_CHANNEL=stable INSTALL_K3S_EXEC="server \
+        --server=https://${k3s_master_ip}:6443 \
+        --token=${k3s_token} \
+        --node-name=`hostname -f` \
+        --write-kubeconfig ${k3s_dir}/kubeconfig/config \
+        --image-credential-provider-bin-dir /var/lib/rancher/credentialprovider/bin \
+        --image-credential-provider-config /var/lib/rancher/credentialprovider/config.yaml \
+        --data-dir=${k3s_dir} \
+        --default-local-storage-path=${k3s_dir}/storage" sh -
+  - |
+    mkdir -p /home/ubuntu/.kube
+    cp ${k3s_dir}/kubeconfig/config /home/ubuntu/.kube/config
+    chown -R ubuntu:ubuntu /home/ubuntu/
