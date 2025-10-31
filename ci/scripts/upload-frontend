@@ -1,0 +1,87 @@
+#!/bin/bash
+
+set -euo pipefail
+
+if [ "$#" -ne 2 ]; then
+  echo "Usage: $0 <source_directory> <s3_destination_uri>"
+  echo "Example: $0 ./build s3://my-bucket/optional/basepath"
+  exit 1
+fi
+
+SOURCE_DIR=${1%/}
+DEST_S3_URI=$2
+
+BUCKET="${DEST_S3_URI#s3://}"
+BUCKET="${BUCKET%%/*}"
+
+BASE="${DEST_S3_URI#s3://$BUCKET}"
+BASE="${BASE#/}"
+BASE="${BASE%/}"
+
+prefix_for() {
+  local p="$1"
+  if [ -n "$BASE" ]; then
+    printf "%s/%s" "$BASE" "$p"
+  else
+    printf "%s" "$p"
+  fi
+}
+
+LOCK_KEY="$(prefix_for deploy.lock)"
+NEW_PREFIX="$(prefix_for new)"
+CUR_PREFIX="$(prefix_for current)"
+OLD_PREFIX="$(prefix_for old)"
+
+if ! command -v yc >/dev/null 2>&1; then
+  echo "Error: yc CLI not found"
+  exit 1
+fi
+
+while true; do
+  LOCK_COUNT=$(yc storage s3api list-objects --bucket "$BUCKET" --prefix "$LOCK_KEY" --max-keys 1 --format json --jq '((.Contents? // .contents?) | length)')
+  if [ "${LOCK_COUNT:-0}" -eq 0 ]; then
+    break
+  fi
+  sleep 2
+done
+
+TMP_LOCK=$(mktemp) || { echo "mktemp failed"; exit 1; }
+trap 'yc storage s3 rm "s3://'"$BUCKET"'/'"$LOCK_KEY"'" >/dev/null 2>&1 || true; rm -f "$TMP_LOCK"' EXIT
+
+printf '%s\n' "$$ $(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$TMP_LOCK"
+yc storage s3 cp "$TMP_LOCK" "s3://$BUCKET/$LOCK_KEY"
+
+find "$SOURCE_DIR" -type f -print0 | while IFS= read -r -d '' FILE_PATH; do
+  RELATIVE_PATH=${FILE_PATH#"$SOURCE_DIR"/}
+  DETECTED_MIME=$(file --brief --mime-type "$FILE_PATH")
+  EXT="${FILE_PATH##*.}"
+  MIME_TYPE="$DETECTED_MIME"
+
+  if [[ "$DETECTED_MIME" == "text/plain" || "$DETECTED_MIME" == "application/octet-stream" ]]; then
+    case "$EXT" in
+      css)   MIME_TYPE="text/css" ;;
+      js)    MIME_TYPE="application/javascript" ;;
+      html)  MIME_TYPE="text/html" ;;
+      json)  MIME_TYPE="application/json" ;;
+      svg)   MIME_TYPE="image/svg+xml" ;;
+      png)   MIME_TYPE="image/png" ;;
+      jpg|jpeg) MIME_TYPE="image/jpeg" ;;
+      gif)   MIME_TYPE="image/gif" ;;
+      woff)  MIME_TYPE="font/woff" ;;
+      woff2) MIME_TYPE="font/woff2" ;;
+      ttf)   MIME_TYPE="font/ttf" ;;
+      eot)   MIME_TYPE="application/vnd.ms-fontobject" ;;
+      *)     MIME_TYPE="$DETECTED_MIME" ;;
+    esac
+  fi
+
+  DEST="s3://$BUCKET/$NEW_PREFIX/$RELATIVE_PATH"
+  echo "Uploading $FILE_PATH -> $DEST (Content-Type: $MIME_TYPE)"
+  yc storage s3 cp "$FILE_PATH" "$DEST" --content-type="$MIME_TYPE"
+done
+
+yc storage s3 rm "s3://$BUCKET/$OLD_PREFIX/" --recursive || true
+yc storage s3 mv "s3://$BUCKET/$CUR_PREFIX/" "s3://$BUCKET/$OLD_PREFIX/" --recursive || true
+yc storage s3 mv "s3://$BUCKET/$NEW_PREFIX/" "s3://$BUCKET/$CUR_PREFIX/" --recursive
+
+echo "Deploy finished. Serve from s3://$BUCKET/$CUR_PREFIX/"
