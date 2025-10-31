@@ -1,5 +1,5 @@
 resource "yandex_storage_bucket" "frontend" {
-  bucket                = var.domain
+  bucket                = local.final_frontend_domain
   default_storage_class = "STANDARD"
   force_destroy         = false
   max_size              = 104857600
@@ -12,7 +12,7 @@ resource "yandex_storage_bucket" "frontend" {
 }
 
 resource "yandex_storage_bucket" "frontend_develop" {
-  bucket                = "dev.${var.domain}"
+  bucket                = local.final_frontend_develop_domain
   default_storage_class = "STANDARD"
   force_destroy         = false
   max_size              = 104857600

@@ -4,7 +4,7 @@ output "registry_data" {
   }
 }
 
-output "api_gateway_data" {
+output "frontend_api_gateway_data" {
   value = {
     domain = yandex_api_gateway.frontend.domain
   }

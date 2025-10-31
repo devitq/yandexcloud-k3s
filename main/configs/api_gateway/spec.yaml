@@ -31,7 +31,7 @@ paths:
         http_headers:
           "Content-Type": "application/json"
         content:
-          "*": '{"backend_url": "https://backend.interview.yandex.itqdev.xyz"}'
+          "*": '{"backend_url": "https://some.backend.example.com"}'
       responses:
         "200":
           description: Config returned.

@@ -1,5 +1,5 @@
-resource "yandex_compute_instance_group" "master" {
-  name                = "master"
+resource "yandex_compute_instance_group" "k8s_master" {
+  name                = "k8s-master"
   description         = "Masters instance group for Kubernetes cluster"
   service_account_id  = yandex_iam_service_account.instance_group_sa.id
   deletion_protection = true
@@ -9,8 +9,8 @@ resource "yandex_compute_instance_group" "master" {
   }
 
   instance_template {
-    name = "master-{instance.index_in_zone}-{instance.zone_id}"
-    hostname = "master-{instance.index_in_zone}.{instance.zone_id}"
+    name     = "k8s-master-{instance.index_in_zone}-{instance.zone_id}"
+    hostname = "master-{instance.index_in_zone}.{instance.zone_id}.k8s.internal"
     labels = {
       "instance-group" = "master"
       "kubernetes"     = "control-plane"
@@ -28,7 +28,8 @@ resource "yandex_compute_instance_group" "master" {
 
     boot_disk {
       initialize_params {
-        image_id    = data.yandex_compute_image.ubuntu_2404.id
+        # image_id    = data.yandex_compute_image.ubuntu_2404.id
+        image_id    = "f2enm07snmcg7jhhcgst"
         description = "Boot disk"
         size        = 10
         type        = "network-hdd"
@@ -68,7 +69,7 @@ resource "yandex_compute_instance_group" "master" {
       enable-oslogin        = true
       serial-port-enable    = 1
       install-unified-agent = 0
-      user-data             = data.template_file.master_cloud_init.rendered
+      user-data             = data.template_file.k8s_master_cloud_init.rendered
     }
   }
 
@@ -90,7 +91,7 @@ resource "yandex_compute_instance_group" "master" {
   }
 
   load_balancer {
-    target_group_name            = "master-instance-group"
+    target_group_name            = "k8s-master-instance-group"
     target_group_description     = "Load balancer target group for k8s masters"
     max_opening_traffic_duration = 600
     ignore_health_checks         = true
@@ -108,15 +109,15 @@ resource "yandex_compute_instance_group" "master" {
   max_checking_health_duration = 600
 
   depends_on = [
-    yandex_compute_instance.master,
+    yandex_compute_instance.k8s_main_master,
     yandex_iam_service_account.instance_group_sa,
     yandex_resourcemanager_folder_iam_member.instance_group_sa_compute_editor,
     yandex_resourcemanager_folder_iam_member.instance_group_sa_lb_editor
   ]
 }
 
-resource "yandex_compute_instance_group" "worker" {
-  name                = "worker"
+resource "yandex_compute_instance_group" "k8s_worker" {
+  name                = "k8s-worker"
   description         = "Workers instance group for Kubernetes cluster"
   service_account_id  = yandex_iam_service_account.instance_group_sa.id
   deletion_protection = true
@@ -126,8 +127,8 @@ resource "yandex_compute_instance_group" "worker" {
   }
 
   instance_template {
-    name = "worker-{instance.index_in_zone}-{instance.zone_id}"
-    hostname = "worker-{instance.index_in_zone}.{instance.zone_id}.internal"
+    name     = "k8s-worker-{instance.index_in_zone}-{instance.zone_id}"
+    hostname = "worker-{instance.index_in_zone}.{instance.zone_id}.k8s.internal"
     labels = {
       "instance-group" = "worker"
       "kubernetes"     = "worker"
@@ -185,13 +186,13 @@ resource "yandex_compute_instance_group" "worker" {
       enable-oslogin        = true
       serial-port-enable    = 1
       install-unified-agent = 0
-      user-data             = data.template_file.worker_cloud_init.rendered
+      user-data             = data.template_file.k8s_worker_cloud_init.rendered
     }
   }
 
   scale_policy {
     fixed_scale {
-      size = 0
+      size = 1
     }
   }
   allocation_policy {
@@ -207,7 +208,7 @@ resource "yandex_compute_instance_group" "worker" {
   }
 
   load_balancer {
-    target_group_name            = "worker-instance-group"
+    target_group_name            = "k8s-worker-instance-group"
     target_group_description     = "Load balancer target group for k8s workers"
     max_opening_traffic_duration = 600
     ignore_health_checks         = true
@@ -225,7 +226,7 @@ resource "yandex_compute_instance_group" "worker" {
   max_checking_health_duration = 600
 
   depends_on = [
-    yandex_compute_instance.master,
+    yandex_compute_instance.k8s_main_master,
     yandex_iam_service_account.instance_group_sa,
     yandex_resourcemanager_folder_iam_member.instance_group_sa_compute_editor,
     yandex_resourcemanager_folder_iam_member.instance_group_sa_lb_editor

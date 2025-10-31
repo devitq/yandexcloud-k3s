@@ -29,29 +29,29 @@ resource "yandex_iam_service_account_iam_binding" "instance_group_vm_sa_admin" {
   ]
 }
 
-resource "yandex_iam_service_account" "master_vm_sa" {
-  name        = "master-vm-sa"
+resource "yandex_iam_service_account" "k8s_main_master_vm_sa" {
+  name        = "k8s-master-vm-sa"
   description = "Service account for master vm"
 }
 
-resource "yandex_compute_instance_iam_binding" "master_vm_sa_editor" {
-  instance_id = yandex_compute_instance.master.id
+resource "yandex_compute_instance_iam_binding" "k8s_main_master_vm_sa_editor" {
+  instance_id = yandex_compute_instance.k8s_main_master.id
   role        = "editor"
   members = [
-    "serviceAccount:${yandex_iam_service_account.master_vm_sa.id}"
+    "serviceAccount:${yandex_iam_service_account.k8s_main_master_vm_sa.id}"
   ]
 }
 
-resource "yandex_resourcemanager_folder_iam_member" "master_vm_sa_viewer" {
+resource "yandex_resourcemanager_folder_iam_member" "k8s_main_master_vm_sa_viewer" {
   folder_id = var.folder_id
   role      = "compute.viewer"
-  member    = "serviceAccount:${yandex_iam_service_account.master_vm_sa.id}"
+  member    = "serviceAccount:${yandex_iam_service_account.k8s_main_master_vm_sa.id}"
 }
 
-resource "yandex_resourcemanager_folder_iam_member" "master_vm_sa_oslogin" {
+resource "yandex_resourcemanager_folder_iam_member" "k8s_main_master_vm_sa_oslogin" {
   folder_id = var.folder_id
   role      = "compute.osAdminLogin"
-  member    = "serviceAccount:${yandex_iam_service_account.master_vm_sa.id}"
+  member    = "serviceAccount:${yandex_iam_service_account.k8s_main_master_vm_sa.id}"
 }
 
 resource "yandex_iam_service_account" "registry_push_sa" {

@@ -1,5 +1,5 @@
 resource "yandex_cm_certificate" "default" {
-  name                = "default"
+  name                = replace(lower(var.domain), ".", "-")
   description         = "Default certificate for all resources"
   deletion_protection = true
 

@@ -41,10 +41,12 @@ runcmd:
     fi
     echo "$DISK $K3S_DIR ext4 defaults 0 0" >> /etc/fstab
     mount -a
+    resize2fs $DISK
   - |
     curl -sfL https://get.k3s.io | INSTALL_K3S_CHANNEL=stable INSTALL_K3S_EXEC="server \
         --cluster-init \
         --token=${k3s_token} \
+        --node-name=`hostname -f` \
         --node-taint CriticalAddonsOnly=true:NoExecute \
         --write-kubeconfig ${k3s_dir}/kubeconfig/config \
         --image-credential-provider-bin-dir /var/lib/rancher/credentialprovider/bin \
