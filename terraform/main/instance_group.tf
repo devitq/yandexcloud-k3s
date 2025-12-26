@@ -28,8 +28,7 @@ resource "yandex_compute_instance_group" "k8s_master" {
 
     boot_disk {
       initialize_params {
-        # image_id    = data.yandex_compute_image.ubuntu_2404.id
-        image_id    = "f2enm07snmcg7jhhcgst"
+        image_id    = data.yandex_compute_image.ubuntu_2404.id
         description = "Boot disk"
         size        = 10
         type        = "network-hdd"
