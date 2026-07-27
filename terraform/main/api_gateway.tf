@@ -17,5 +17,7 @@ resource "yandex_api_gateway" "frontend" {
     min_level    = "INFO"
   }
 
-  spec = data.template_file.frontend_api_gateway_spec.rendered
+  spec = templatefile("${path.module}/configs/api_gateway/spec.yaml", {
+    bucket_name = yandex_storage_bucket.frontend.bucket
+  })
 }

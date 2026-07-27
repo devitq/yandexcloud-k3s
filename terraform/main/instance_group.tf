@@ -68,17 +68,24 @@ resource "yandex_compute_instance_group" "k8s_master" {
       enable-oslogin        = true
       serial-port-enable    = 1
       install-unified-agent = 0
-      user-data             = data.template_file.k8s_master_cloud_init.rendered
+      user-data = templatefile("${path.module}/configs/cloud_init/master.yaml", {
+        k3s_credential_provider_config = base64encode(file("${path.module}/configs/k3s/credentialprovider.yaml"))
+        k3s_credential_provider        = base64encode(file("${path.module}/configs/k3s/yc-credential-provider"))
+        k3s_dir                        = local.k3s_data_dir
+        k3s_token                      = random_password.k3s_token.result
+        k3s_master_ip                  = local.k8s_main_master_fqdn
+        yc_cloud_id                    = var.cloud_id
+      })
     }
   }
 
   scale_policy {
     fixed_scale {
-      size = 2
+      size = 3
     }
   }
   allocation_policy {
-    zones = ["ru-central1-a", "ru-central1-b"]
+    zones = ["ru-central1-a", "ru-central1-b", "ru-central1-d"]
   }
   deploy_policy {
     max_creating     = 3
@@ -185,13 +192,20 @@ resource "yandex_compute_instance_group" "k8s_worker" {
       enable-oslogin        = true
       serial-port-enable    = 1
       install-unified-agent = 0
-      user-data             = data.template_file.k8s_worker_cloud_init.rendered
+      user-data = templatefile("${path.module}/configs/cloud_init/worker.yaml", {
+        k3s_credential_provider_config = base64encode(file("${path.module}/configs/k3s/credentialprovider.yaml"))
+        k3s_credential_provider        = base64encode(file("${path.module}/configs/k3s/yc-credential-provider"))
+        k3s_dir                        = local.k3s_data_dir
+        k3s_token                      = random_password.k3s_token.result
+        k3s_master_ip                  = local.k8s_main_master_fqdn
+        yc_cloud_id                    = var.cloud_id
+      })
     }
   }
 
   scale_policy {
     fixed_scale {
-      size = 1
+      size = 2
     }
   }
   allocation_policy {

@@ -11,6 +11,22 @@ resource "yandex_lb_network_load_balancer" "k8s_lb" {
       ip_version = "ipv4"
     }
   }
+  listener {
+    name = "http"
+    port = 80
+    external_address_spec {
+      address    = yandex_vpc_address.nlb.external_ipv4_address[0].address
+      ip_version = "ipv4"
+    }
+  }
+  listener {
+    name = "https"
+    port = 443
+    external_address_spec {
+      address    = yandex_vpc_address.nlb.external_ipv4_address[0].address
+      ip_version = "ipv4"
+    }
+  }
 
   attached_target_group {
     target_group_id = yandex_lb_target_group.k8s_main_master.id

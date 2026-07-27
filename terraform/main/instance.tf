@@ -14,6 +14,13 @@ resource "yandex_compute_instance" "k8s_main_master" {
     ansible = "master"
   }
 
+  lifecycle {
+    prevent_destroy       = true
+    ignore_changes = [
+      hostname,
+    ]
+  }
+
   resources {
     cores         = 2
     memory        = 2
@@ -57,7 +64,13 @@ resource "yandex_compute_instance" "k8s_main_master" {
     enable-oslogin        = true
     serial-port-enable    = 1
     install-unified-agent = 0
-    user-data             = data.template_file.k8s_main_master_cloud_init.rendered
+    user-data = templatefile("${path.module}/configs/cloud_init/main_master.yaml", {
+      k3s_credential_provider_config = base64encode(file("${path.module}/configs/k3s/credentialprovider.yaml"))
+      k3s_credential_provider        = base64encode(file("${path.module}/configs/k3s/yc-credential-provider"))
+      k3s_dir                        = local.k3s_data_dir
+      k3s_token                      = random_password.k3s_token.result
+      yc_cloud_id                    = var.cloud_id
+    })
   }
 
   metadata_options {
