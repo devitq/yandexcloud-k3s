@@ -10,7 +10,7 @@ resource "terraform_data" "k8s_main_master_user_data" {
 }
 
 resource "yandex_compute_instance" "k8s_main_master" {
-  name               = "k8s-master"
+  name               = "master-k8s"
   hostname           = local.k8s_main_master_fqdn
   description        = "Salt, ansible and kubernetes master, provisions other nodes"
   platform_id        = "standard-v3"

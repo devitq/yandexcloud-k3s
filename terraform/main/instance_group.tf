@@ -9,7 +9,7 @@ resource "yandex_compute_instance_group" "k8s_master" {
   }
 
   instance_template {
-    name     = "k8s-master-{instance.index_in_zone}-{instance.zone_id}"
+    name     = "master-{instance.index_in_zone}-{instance.zone_id}-k8s"
     hostname = "master-{instance.index_in_zone}.{instance.zone_id}.k8s.internal"
     labels = {
       "instance-group" = "master"
@@ -135,7 +135,7 @@ resource "yandex_compute_instance_group" "k8s_worker" {
   }
 
   instance_template {
-    name     = "k8s-worker-{instance.index_in_zone}-{instance.zone_id}"
+    name     = "worker-{instance.index_in_zone}-{instance.zone_id}-k8s"
     hostname = "worker-{instance.index_in_zone}.{instance.zone_id}.k8s.internal"
     labels = {
       "instance-group" = "worker"
