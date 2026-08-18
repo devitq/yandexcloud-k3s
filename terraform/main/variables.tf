@@ -7,6 +7,11 @@ variable "domain" {
   type        = string
 }
 
+variable "cluster_domain" {
+  type = string
+  default = "k8s.nlb.infra.itqdev.xyz"
+}
+
 variable "frontend_domain" {
   description = "Domain to serve frontend from (must equal domain or *.domain), default: domain"
   type        = string

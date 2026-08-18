@@ -44,10 +44,30 @@ runcmd:
     resize2fs $DISK
   - |
     curl -sfL https://get.k3s.io | INSTALL_K3S_CHANNEL=stable INSTALL_K3S_EXEC="server \
+        -v 2 \
         --cluster-init \
+        --bind-address 0.0.0.0 \
+        --https-listen-port 6443 \
         --token=${k3s_token} \
         --node-name=`hostname -f` \
         --node-taint CriticalAddonsOnly=true:NoExecute \
+        --cluster-cidr 10.96.0.0/16 \
+        --service-cidr 10.97.0.0/16 \
+        --cluster-dns 10.97.0.10 \
+        --tls-san ${k3s_fqdn} \
+        --tls-san-security \
+        --cluster-domain cluster.local \
+        --disable coredns,traefik,local-storage,metrics-server,runtimes \
+        --disable-network-policy \
+        --disable-kube-proxy \
+        --flannel-backend none \
+        --egress-selector-mode agent \
+        --servicelb-namespace kube-system \
+        --nonroot-devices \
+        --secrets-encryption-provider secretbox \
+        --lb-server-port 6444 \
+        --write-kubeconfig-mode 0600 \
+        --write-kubeconfig-group root \
         --write-kubeconfig ${k3s_dir}/kubeconfig/config \
         --image-credential-provider-bin-dir /var/lib/rancher/credentialprovider/bin \
         --image-credential-provider-config /var/lib/rancher/credentialprovider/config.yaml \

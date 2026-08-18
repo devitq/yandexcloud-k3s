@@ -20,7 +20,7 @@ resource "yandex_compute_instance_group" "k8s_master" {
 
     platform_id = "standard-v3"
     resources {
-      core_fraction = 50
+      core_fraction = 100
       cores         = 2
       gpus          = 0
       memory        = 4
@@ -39,8 +39,8 @@ resource "yandex_compute_instance_group" "k8s_master" {
       device_name = "data"
       initialize_params {
         description = "Data disk"
-        size        = 20
-        type        = "network-hdd"
+        size        = 10
+        type        = "network-ssd"
       }
       mode = "READ_WRITE"
     }
@@ -51,6 +51,7 @@ resource "yandex_compute_instance_group" "k8s_master" {
         yandex_vpc_subnet.default_ru_central1_a.id,
         yandex_vpc_subnet.default_ru_central1_b.id,
         yandex_vpc_subnet.default_ru_central1_d.id,
+        yandex_vpc_subnet.default_ru_central1_e.id,
       ]
       nat = false
     }
@@ -74,6 +75,7 @@ resource "yandex_compute_instance_group" "k8s_master" {
         k3s_dir                        = local.k3s_data_dir
         k3s_token                      = random_password.k3s_token.result
         k3s_master_ip                  = local.k8s_main_master_fqdn
+        k3s_fqdn                       = var.cluster_domain
         yc_cloud_id                    = var.cloud_id
       })
     }
@@ -81,11 +83,11 @@ resource "yandex_compute_instance_group" "k8s_master" {
 
   scale_policy {
     fixed_scale {
-      size = 3
+      size = 2
     }
   }
   allocation_policy {
-    zones = ["ru-central1-a", "ru-central1-b", "ru-central1-d"]
+    zones = ["ru-central1-a", "ru-central1-b", "ru-central1-d", "ru-central1-e"]
   }
   deploy_policy {
     max_creating     = 3
@@ -144,10 +146,10 @@ resource "yandex_compute_instance_group" "k8s_worker" {
 
     platform_id = "standard-v3"
     resources {
-      core_fraction = 50
-      cores         = 2
+      core_fraction = 100
+      cores         = 4
       gpus          = 0
-      memory        = 2
+      memory        = 8
     }
 
     boot_disk {
@@ -163,8 +165,8 @@ resource "yandex_compute_instance_group" "k8s_worker" {
       device_name = "data"
       initialize_params {
         description = "Data disk"
-        size        = 20
-        type        = "network-hdd"
+        size        = 10
+        type        = "network-ssd"
       }
       mode = "READ_WRITE"
     }
@@ -175,6 +177,7 @@ resource "yandex_compute_instance_group" "k8s_worker" {
         yandex_vpc_subnet.default_ru_central1_a.id,
         yandex_vpc_subnet.default_ru_central1_b.id,
         yandex_vpc_subnet.default_ru_central1_d.id,
+        yandex_vpc_subnet.default_ru_central1_e.id,
       ]
       nat = false
     }
@@ -209,7 +212,7 @@ resource "yandex_compute_instance_group" "k8s_worker" {
     }
   }
   allocation_policy {
-    zones = ["ru-central1-a", "ru-central1-b", "ru-central1-d"]
+    zones = ["ru-central1-a", "ru-central1-b", "ru-central1-d", "ru-central1-e"]
   }
   deploy_policy {
     max_creating     = 3

@@ -45,7 +45,7 @@ output "registry_pull_sa_key" {
 #   })
 #   sensitive = true
 # }
-# 
+
 # output "lets_encrypt_challenges" {
 #   value = yandex_cm_certificate.default.challenges
 # }

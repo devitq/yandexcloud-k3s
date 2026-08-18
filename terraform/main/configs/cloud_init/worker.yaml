@@ -44,9 +44,12 @@ runcmd:
     resize2fs $DISK
   - |
     curl -sfL https://get.k3s.io | INSTALL_K3S_CHANNEL=stable INSTALL_K3S_EXEC="agent \
+        -v 2 \
         --server=https://${k3s_master_ip}:6443 \
         --token=${k3s_token} \
         --node-name=`hostname -f` \
+        --nonroot-devices \
+        --lb-server-port 6444 \
         --image-credential-provider-bin-dir /var/lib/rancher/credentialprovider/bin \
         --image-credential-provider-config /var/lib/rancher/credentialprovider/config.yaml \
         --data-dir=${k3s_dir}" sh -

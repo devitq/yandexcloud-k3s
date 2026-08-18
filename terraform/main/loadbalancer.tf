@@ -27,13 +27,21 @@ resource "yandex_lb_network_load_balancer" "k8s_lb" {
       ip_version = "ipv4"
     }
   }
+  listener {
+    name = "postgres-rw"
+    port = 5432
+    external_address_spec {
+      address    = yandex_vpc_address.nlb.external_ipv4_address[0].address
+      ip_version = "ipv4"
+    }
+  }
 
   attached_target_group {
     target_group_id = yandex_lb_target_group.k8s_main_master.id
 
     // Verifies that Traefik daeomnset has started on node
     healthcheck {
-      name                = "main-master-traefik"
+      name                = "main-master"
       healthy_threshold   = 2
       unhealthy_threshold = 2
       interval            = 5
@@ -47,9 +55,8 @@ resource "yandex_lb_network_load_balancer" "k8s_lb" {
   attached_target_group {
     target_group_id = yandex_compute_instance_group.k8s_master.load_balancer[0].target_group_id
 
-    // Verifies that Traefik daeomnset has started on node
     healthcheck {
-      name                = "master-instance-group-traefik"
+      name                = "master-instance-group"
       healthy_threshold   = 2
       unhealthy_threshold = 2
       interval            = 5
@@ -65,7 +72,7 @@ resource "yandex_lb_network_load_balancer" "k8s_lb" {
 
     // Verifies that Traefik daeomnset has started on node
     healthcheck {
-      name                = "worker-instance-group-traefik"
+      name                = "worker-instance-group"
       healthy_threshold   = 2
       unhealthy_threshold = 2
       interval            = 5

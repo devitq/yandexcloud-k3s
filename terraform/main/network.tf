@@ -51,6 +51,16 @@ resource "yandex_vpc_subnet" "default_ru_central1_d" {
   zone           = "ru-central1-d"
 }
 
+resource "yandex_vpc_subnet" "default_ru_central1_e" {
+  name        = "default-ru-central1-e"
+  description = "Default subnet for ru-central1-e"
+
+  network_id     = yandex_vpc_network.default.id
+  route_table_id = yandex_vpc_route_table.default.id
+  v4_cidr_blocks = ["10.5.0.0/16"]
+  zone           = "ru-central1-e"
+}
+
 resource "yandex_vpc_address" "nlb" {
   name                = "nlb"
   description         = "External IP address for network lb"

@@ -1,3 +1,14 @@
+resource "terraform_data" "k8s_main_master_user_data" {
+  input = templatefile("${path.module}/configs/cloud_init/main_master.yaml", {
+      k3s_credential_provider_config = base64encode(file("${path.module}/configs/k3s/credentialprovider.yaml"))
+      k3s_credential_provider        = base64encode(file("${path.module}/configs/k3s/yc-credential-provider"))
+      k3s_dir                        = local.k3s_data_dir
+      k3s_token                      = random_password.k3s_token.result
+      k3s_fqdn                       = var.cluster_domain
+      yc_cloud_id                    = var.cloud_id
+    })
+}
+
 resource "yandex_compute_instance" "k8s_main_master" {
   name               = "k8s-master"
   hostname           = local.k8s_main_master_fqdn
@@ -15,9 +26,11 @@ resource "yandex_compute_instance" "k8s_main_master" {
   }
 
   lifecycle {
-    prevent_destroy       = true
     ignore_changes = [
-      hostname,
+      hostname, boot_disk[0].initialize_params[0].image_id
+    ]
+    replace_triggered_by = [
+      terraform_data.k8s_main_master_user_data
     ]
   }
 
@@ -64,13 +77,7 @@ resource "yandex_compute_instance" "k8s_main_master" {
     enable-oslogin        = true
     serial-port-enable    = 1
     install-unified-agent = 0
-    user-data = templatefile("${path.module}/configs/cloud_init/main_master.yaml", {
-      k3s_credential_provider_config = base64encode(file("${path.module}/configs/k3s/credentialprovider.yaml"))
-      k3s_credential_provider        = base64encode(file("${path.module}/configs/k3s/yc-credential-provider"))
-      k3s_dir                        = local.k3s_data_dir
-      k3s_token                      = random_password.k3s_token.result
-      yc_cloud_id                    = var.cloud_id
-    })
+    user-data = terraform_data.k8s_main_master_user_data.output
   }
 
   metadata_options {
