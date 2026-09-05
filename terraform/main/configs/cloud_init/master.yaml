@@ -59,19 +59,22 @@ runcmd:
         --disable coredns,traefik,local-storage,metrics-server,runtimes \
         --disable-network-policy \
         --disable-kube-proxy \
+        --disable-cloud-controller \
+        --disable-helm-controller \
         --flannel-backend none \
         --egress-selector-mode agent \
         --servicelb-namespace kube-system \
         --nonroot-devices \
+        --secrets-encryption \
         --secrets-encryption-provider secretbox \
         --lb-server-port 6444 \
+        --etcd-expose-metrics \
         --write-kubeconfig-mode 0600 \
         --write-kubeconfig-group root \
         --write-kubeconfig ${k3s_dir}/kubeconfig/config \
         --image-credential-provider-bin-dir /var/lib/rancher/credentialprovider/bin \
         --image-credential-provider-config /var/lib/rancher/credentialprovider/config.yaml \
-        --data-dir=${k3s_dir} \
-        --default-local-storage-path=${k3s_dir}/storage" sh -
+        --data-dir=${k3s_dir}" sh -
   - |
     mkdir -p /home/ubuntu/.kube
     cp ${k3s_dir}/kubeconfig/config /home/ubuntu/.kube/config
