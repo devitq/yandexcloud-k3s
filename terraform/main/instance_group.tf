@@ -105,10 +105,10 @@ resource "yandex_compute_instance_group" "k8s_master" {
     ignore_health_checks         = true
   }
   health_check {
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    interval            = 2
-    timeout             = 1
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+    interval            = 10
+    timeout             = 9
 
     tcp_options {
       port = 6443
@@ -230,10 +230,10 @@ resource "yandex_compute_instance_group" "k8s_worker" {
     ignore_health_checks         = true
   }
   health_check {
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    interval            = 2
-    timeout             = 1
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+    interval            = 10
+    timeout             = 9
 
     tcp_options {
       port = 80
