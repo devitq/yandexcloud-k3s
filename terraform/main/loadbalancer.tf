@@ -5,7 +5,7 @@ resource "yandex_lb_network_load_balancer" "k8s_lb" {
 
   listener {
     name = "kubeapi"
-    port = 6443
+    port = 8443
     external_address_spec {
       address    = yandex_vpc_address.nlb.external_ipv4_address[0].address
       ip_version = "ipv4"
